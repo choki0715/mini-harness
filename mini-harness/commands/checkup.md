@@ -8,7 +8,7 @@ allowed-tools: Bash, Read, Grep, Glob
 !`"${CLAUDE_PLUGIN_ROOT}/bin/mh-changes" $ARGUMENTS 2>&1`
 
 기존 커밋 스타일:
-!`git log --oneline -10 2>/dev/null || echo "커밋 없음"`
+!`ARG="$ARGUMENTS"; git -C "${ARG:-.}" log --oneline -10 2>/dev/null || echo "커밋 없음"`
 
 ---
 
