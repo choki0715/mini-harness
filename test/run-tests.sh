@@ -30,6 +30,7 @@ build_fixture() {
   git config user.email test@example.com
   git config user.name  test
   mkdir -p src tests
+  touch .mini-harness-demo          # 이 저장소가 훅의 대상임을 표시
   echo "x = 1" > src/app.py
   git add -A && git commit -qm "init"
 
@@ -134,6 +135,14 @@ out="$(echo 'not json' | python3 "$GUARD")"
 # 보호 브랜치가 아니면 커밋이 통과해야 한다
 git switch -qc feature
 g "작업 브랜치 커밋은 통과" PASS "git commit -m 'x'"
+
+# 범위 밖 저장소는 아예 검사하지 않는다 (실무 저장소를 막지 않기 위해)
+git switch -q master
+rm -f .mini-harness-demo
+g "마커 없으면 main 커밋도 통과" PASS "git commit -m 'x'"
+g "마커 없으면 force push 도 통과" PASS "git push --force"
+MINI_HARNESS_GUARD=1 g "환경변수로 켜면 다시 막힌다" DENY "git commit -m 'x'"
+touch .mini-harness-demo
 
 # ─── 결과 ─────────────────────────────────────────────────────
 echo

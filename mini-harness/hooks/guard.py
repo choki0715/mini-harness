@@ -7,9 +7,15 @@
   대체로. LLM 은 맥락에 따라 스스로를 설득할 수 있고, 사용자가 재촉하면
   더 그렇다. 훅은 프롬프트가 아니라 코드다. 협상 대상이 아니다.
 
-  규칙: 되돌릴 수 있는 일은 스킬에 맡기고,
-        되돌릴 수 없는 일만 훅으로 막는다.
-        훅이 많아지면 에이전트가 아무 일도 못 한다.
+  규칙 1: 되돌릴 수 있는 일은 스킬에 맡기고,
+          되돌릴 수 없는 일만 훅으로 막는다.
+          훅이 많아지면 에이전트가 아무 일도 못 한다.
+
+  규칙 2: 가드레일에는 범위를 준다.
+          훅은 설치하면 모든 프로젝트에서 돈다. 이 훅은 main 커밋을 막으므로,
+          범위가 없으면 평소 main 에서 작업하는 저장소의 커밋까지 막는다.
+          수업 자료가 실무를 막는 것이다.
+          그래서 이 훅은 '스스로 대상인지 확인하고' 아니면 조용히 비켜선다.
 
 표준 라이브러리만 쓴다. 어느 환경에서나 즉시 돌아야 한다.
 """
@@ -17,11 +23,19 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 import subprocess
 import sys
 
 PROTECTED_BRANCHES = {"main", "master"}
+
+# 이 훅이 동작할 저장소를 고르는 방법 두 가지.
+#   1) 저장소 루트에 마커 파일이 있다      (examples/make-dirty-repo.sh 가 만든다)
+#   2) 환경변수로 켠다                      MINI_HARNESS_GUARD=1
+# 둘 다 아니면 아무것도 하지 않는다.
+MARKER = ".mini-harness-demo"
+ENV_SWITCH = "MINI_HARNESS_GUARD"
 
 # 명령의 '시작 위치'만 본다. 이게 없으면 `echo "git commit 예시"` 같은
 # 따옴표 안 문자열까지 명령으로 오인한다.
@@ -61,6 +75,25 @@ def deny(reason: str) -> None:
     raise SystemExit(0)
 
 
+def repo_root() -> str:
+    try:
+        out = subprocess.run(
+            ["git", "rev-parse", "--show-toplevel"],
+            capture_output=True, text=True, timeout=5,
+        )
+        return out.stdout.strip() if out.returncode == 0 else ""
+    except (OSError, subprocess.SubprocessError):
+        return ""
+
+
+def in_scope() -> bool:
+    """이 훅이 이 저장소를 지켜야 하는가."""
+    if os.environ.get(ENV_SWITCH) == "1":
+        return True
+    root = repo_root()
+    return bool(root) and os.path.exists(os.path.join(root, MARKER))
+
+
 def current_branch() -> str:
     try:
         out = subprocess.run(
@@ -79,6 +112,10 @@ def main() -> int:
         return 0    # 입력이 깨졌으면 통과시킨다. 훅 버그로 작업을 막지 않는다
 
     if data.get("tool_name") != "Bash":
+        return 0
+
+    # 대상 저장소가 아니면 아무것도 하지 않는다. 여기가 범위 제한의 전부다.
+    if not in_scope():
         return 0
 
     command = (data.get("tool_input") or {}).get("command", "")

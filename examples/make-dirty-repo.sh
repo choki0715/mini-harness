@@ -36,6 +36,10 @@ PY
 echo "# 데모 프로젝트" > README.md
 echo "def test_login(): pass" > tests/test_login.py
 
+# 이 저장소가 '실습 대상'임을 표시한다. guard.py 가 이 파일을 보고 동작 여부를 정한다.
+# 마커가 없는 저장소에서는 훅이 조용히 비켜선다 — 실무 저장소를 막지 않기 위해.
+touch "$DEST/.mini-harness-demo"
+
 # ─── 훅을 이 저장소에만 건다 ──────────────────────────────────
 # 훅은 원래 전역이다. ~/.claude/settings.json 에 등록하면 모든 프로젝트에서 돈다.
 # 그러면 수업 자료가 실무 저장소의 커밋까지 막는다.
@@ -110,8 +114,11 @@ cat <<EOF
   · 디버그 print 와 TODO 각 1건
   · 새 기능(billing)에 테스트 없음
 
-가드레일(hooks/guard.py)은 이 저장소 안에서만 돈다.
-$DEST/.claude/settings.json 에 등록했다. 다른 프로젝트에는 영향이 없다.
+가드레일(hooks/guard.py)은 이 저장소 안에서만 돈다. 범위를 두 겹으로 뒀다.
+  1. $DEST/.claude/settings.json 에 훅을 등록 (프로젝트 단위)
+  2. $DEST/.mini-harness-demo 마커 — 훅이 스스로 대상인지 확인한다
+
+2번 덕분에 플러그인으로 전역 설치해도 실무 저장소는 막히지 않는다.
 Claude Code 가 이 디렉터리를 처음 열 때 설정을 신뢰할지 한 번 물을 수 있다.
 
 시연해 볼 것 (전부 차단되어야 한다):
