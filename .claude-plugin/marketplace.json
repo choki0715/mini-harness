@@ -1,0 +1,13 @@
+{
+  "name": "mini-harness-demo",
+  "owner": { "name": "김의중" },
+  "plugins": [
+    {
+      "name": "mini-harness",
+      "source": "./mini-harness",
+      "description": "수업용 최소 에이전트 하네스 예제 — 커맨드·스크립트·스킬·훅 각 1개",
+      "version": "0.1.0",
+      "category": "example"
+    }
+  ]
+}

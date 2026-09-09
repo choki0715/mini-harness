@@ -1,0 +1,96 @@
+#!/usr/bin/env bash
+# mh-changes — 작업 트리의 변경사항을 '사실'로만 뽑는다.
+#
+# 이 스크립트는 판단하지 않는다. 세고, 찾고, 출력할 뿐이다.
+# 판단(무엇이 위험한가, 커밋을 나눠야 하는가)은 스킬이 LLM에게 시킨다.
+#
+# 왜 스크립트인가:
+#   LLM에게 "몇 줄 바뀌었어?"를 물으면 매번 다르게 센다. 세는 일은 git이 한다.
+#   LLM은 "이 변경을 한 커밋으로 묶어도 되는가"처럼 셀 수 없는 것만 판단한다.
+#
+# 출력 형식: `KEY: value` 한 줄씩 (STATUS 라인).
+#   파싱하기 쉽고, 사람이 읽기도 쉽고, LLM이 헷갈리지 않는다.
+#   표나 산문으로 내보내면 LLM이 요약하다가 숫자를 바꾼다.
+set -uo pipefail
+
+cd "${1:-.}" 2>/dev/null || { echo "ERROR: 그런 경로가 없다: ${1:-.}"; exit 1; }
+
+if ! git rev-parse --git-dir >/dev/null 2>&1; then
+  echo "ERROR: git 저장소가 아니다"
+  exit 1
+fi
+
+echo "MH_CHANGES_PROTO: 1"          # 프로토콜 번호. 스킬이 이 줄로 버전을 확인한다
+echo "REPO: $(git rev-parse --show-toplevel)"
+echo "BRANCH: $(git rev-parse --abbrev-ref HEAD)"
+echo "UPSTREAM: $(git rev-parse --abbrev-ref '@{upstream}' 2>/dev/null || echo none)"
+
+# ─── 커밋 대상 파일 목록 ─────────────────────────────────────────
+# 함정: `git diff HEAD` 는 untracked 파일을 못 본다. 새로 만든 파일에
+# 비밀키가 들어 있으면 그대로 통과한다. 그래서 untracked 를 따로 합친다.
+tracked_changed="$(git diff HEAD --name-only --diff-filter=d)"
+untracked="$(git ls-files --others --exclude-standard)"
+all_changed="$(printf '%s\n%s\n' "$tracked_changed" "$untracked" | grep . | sort -u)"
+
+echo "STAGED_FILES: $(git diff --cached --name-only | grep -c . || true)"
+echo "UNSTAGED_FILES: $(git diff --name-only | grep -c . || true)"
+echo "UNTRACKED_FILES: $(echo "$untracked" | grep -c . || true)"
+
+stat_line="$(git diff HEAD --shortstat 2>/dev/null)"
+tracked_ins="$(echo "$stat_line" | grep -oE '[0-9]+ insertion' | grep -oE '[0-9]+' || echo 0)"
+# untracked 파일은 전 줄이 새 줄이다
+untracked_ins=0
+while IFS= read -r f; do
+  [ -f "$f" ] && untracked_ins=$(( untracked_ins + $(wc -l < "$f") ))
+done <<< "$untracked"
+echo "INSERTIONS: $(( tracked_ins + untracked_ins ))"
+echo "DELETIONS: $(echo "$stat_line" | grep -oE '[0-9]+ deletion' | grep -oE '[0-9]+' || echo 0)"
+
+# ─── 무엇이 바뀌었나 ────────────────────────────────────────────
+# 커밋을 나눠야 하는지는 '어느 디렉터리들이 섞였는가'로 드러난다.
+echo "TOUCHED_TOP_DIRS: $(echo "$all_changed" | cut -d/ -f1 | sort -u | tr '\n' ' ')"
+
+echo "FILES:"
+git status --porcelain | sed 's/^/  /'
+
+# 테스트가 같이 바뀌었는가. 안 바뀌었다고 나쁜 건 아니다 — 판단은 스킬이 한다.
+echo "TEST_FILES_CHANGED: $(echo "$all_changed" \
+  | grep -cE '(^|/)(tests?|spec)/|_test\.|test_|\.test\.|\.spec\.' || true)"
+
+# ─── 위험 신호 (찾기만 한다, 막지는 않는다) ───────────────────────
+# 파일별로 '추가된 줄'을 모은다. tracked 는 diff 의 + 줄, untracked 는 전체.
+# 원래 있던 코드를 다시 지적하지 않기 위해 추가분만 본다.
+added_lines_of() {   # added_lines_of <파일>
+  if echo "$untracked" | grep -qxF "$1"; then
+    cat -- "$1" 2>/dev/null
+  else
+    git diff HEAD -U0 -- "$1" | grep '^+' | grep -v '^+++' | cut -c2-
+  fi
+}
+
+SECRET_RE='(api[_-]?key|secret|passwd|password|token|bearer)[[:space:]]*[:=]'
+todo=0; debug=0; secret_hits=""
+
+while IFS= read -r f; do
+  [ -n "$f" ] || continue
+  lines="$(added_lines_of "$f")"
+  [ -n "$lines" ] || continue
+  todo=$((  todo  + $(echo "$lines" | grep -cE 'TODO|FIXME|XXX' || true) ))
+  debug=$(( debug + $(echo "$lines" | grep -cE 'console\.log|print\(|debugger|pdb\.set_trace' || true) ))
+  # 값이 12자 이상인 것만. 짧은 건 대개 플레이스홀더다.
+  hit="$(echo "$lines" | grep -Ei "${SECRET_RE}[[:space:]]*[\"'][^\"']{12,}" || true)"
+  if [ -n "$hit" ]; then
+    # 값은 절대 출력하지 않는다. 파일과 변수 이름까지만.
+    secret_hits+="$(echo "$hit" | sed -E "s|^[[:space:]]*||; s|[[:space:]]*[:=].*| = <값 생략>|; s|^|  $f: |")"$'\n'
+  fi
+done <<< "$all_changed"
+
+echo "NEW_TODO: $todo"
+echo "NEW_DEBUG_PRINT: $debug"
+echo "SECRET_SUSPECT: $(echo "$secret_hits" | grep -c . || true)"
+if [ -n "$secret_hits" ]; then
+  echo "SECRET_LINES:"
+  echo "$secret_hits" | grep . | head -5
+fi
+
+echo "MH_CHANGES_OK"                 # 이 줄이 없으면 스크립트가 중간에 죽은 것이다
