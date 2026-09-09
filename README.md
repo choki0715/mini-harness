@@ -116,53 +116,72 @@ INSERTIONS: 120          ← LLM 이 그대로 읽는다
 
 ## 설치
 
-Claude Code 는 클라이언트가 여러 개고, **`/plugin` 은 CLI 에만 있다.**
+`/plugin` 은 **CLI 대화창(TUI) 안에 구현된 슬래시 명령**이다.
+IDE 확장(VSCode·JetBrains의 Claude 채팅 패널)에는 그 명령이 없다.
+**UI 가 없는 것이지 기능이 없는 게 아니다** — 플러그인 자체는 어느 클라이언트에서나 동작한다.
 
-```
-CLI            터미널에서 `claude` 명령으로 띄운 것          → /plugin 있음
-IDE 확장       VSCode·JetBrains 안의 Claude 채팅 패널       → /plugin 없음
-```
+설치 경로는 세 가지고, 셋 다 `~/.claude/` 를 쓰므로 클라이언트끼리 공유된다.
 
-헷갈리기 쉬운 곳: **VSCode 의 통합 터미널에서 `claude` 를 치면 그것도 CLI 다.**
-VSCode 를 켰느냐가 아니라, 채팅 패널이냐 터미널의 `claude` 냐가 갈림길이다.
-두 클라이언트는 `~/.claude/` 설정을 공유하므로, 한쪽에서 설치하면 다른 쪽에도 보인다.
-
-**CLI 에서** (`claude` 를 띄운 뒤):
+### A. CLI 대화창에서
 
 ```
 /plugin marketplace add choki0715/mini-harness
 /plugin install mini-harness@mini-harness-demo
 ```
 
-**IDE 확장에서** — 또는 설치 과정을 손으로 보여주고 싶을 때:
+### B. 아무 터미널에서 (대화창을 안 띄워도 된다)
+
+`/plugin` 과 같은 일을 하는 CLI 서브명령이 따로 있다. **IDE 확장을 쓰더라도 이건 된다.**
+
+```bash
+claude plugin marketplace add choki0715/mini-harness
+claude plugin install mini-harness@mini-harness-demo
+```
+
+### C. skills-dir 플러그인 — 마켓플레이스도 install 도 없이
+
+`.claude-plugin/plugin.json` 을 가진 폴더를 `~/.claude/skills/` 아래 두면
+다음 세션에 `이름@skills-dir` 로 자동 로드된다. 훅까지 붙는다.
+
+```bash
+git clone https://github.com/choki0715/mini-harness ~/src/mini-harness
+ln -s ~/src/mini-harness/mini-harness ~/.claude/skills/mini-harness
+```
+
+### D. install.sh — 커맨드·스킬만
 
 ```bash
 git clone https://github.com/choki0715/mini-harness
 cd mini-harness && ./install.sh
 ```
 
-둘 중 **하나만** 한다. 양쪽으로 설치하면 커맨드가 중복된다.
-`install.sh` 로 깐 것을 걷어내려면:
-
-```bash
-rm ~/.claude/commands/checkup.md ~/.claude/skills/checkup
-```
-
-설치 후에는 **세션을 다시 시작해야** 커맨드가 뜬다.
-슬래시 커맨드는 세션이 시작할 때 로드된다.
-
-`install.sh` 는 커맨드와 스킬만 설치하고 **훅은 설치하지 않는다.**
-그 차이 자체가 수업 재료다 — 커맨드·스킬은 파일을 놓으면 되지만,
+**훅은 설치되지 않는다.** 그 차이가 수업 재료다 — 커맨드·스킬은 파일을 놓으면 되지만,
 훅은 하네스가 '등록'해 줘야 도는 것이다.
 
-훅은 실습 저장소가 자기 `.claude/settings.json` 에 직접 등록한다
-(`examples/make-dirty-repo.sh` 가 해 준다). 그래서 가드레일은 **그 저장소 안에서만** 돈다.
-
-> 이건 편의가 아니라 설계다. 훅을 `~/.claude/settings.json` 에 등록하면
-> 모든 프로젝트에서 돈다 — 수업 자료가 실무 저장소의 커밋까지 막는다.
-> **가드레일에는 범위를 준다.**
-
 ---
+
+### 어느 것을 고를까 — 훅의 범위가 기준이다
+
+A·B·C 는 훅을 **전역**으로 등록한다. 모든 프로젝트에서 돈다.
+이 예제의 가드레일은 `main`/`master` 커밋을 막으므로, 평소 main 에서 작업하는
+저장소가 있으면 그쪽 커밋까지 막힌다. **수업 자료가 실무를 막는다.**
+
+그래서 기본값은 **D + 실습 저장소 안에만 훅**이다.
+`examples/make-dirty-repo.sh` 가 실습 저장소의 `.claude/settings.json` 에 훅을 등록하므로,
+가드레일은 그 저장소 안에서만 돈다.
+
+> 이건 편의가 아니라 설계다. **가드레일에는 범위를 준다.**
+
+A·B·C 로 설치했다가 걷어내려면:
+
+```bash
+claude plugin uninstall mini-harness@mini-harness-demo   # A·B
+rm ~/.claude/skills/mini-harness                          # C
+rm ~/.claude/commands/checkup.md ~/.claude/skills/checkup # D
+```
+
+**둘 이상으로 동시에 설치하지 않는다.** 커맨드가 중복된다.
+설치 후에는 **세션을 다시 시작해야** 커맨드가 뜬다 — 세션 시작 때 로드되기 때문이다.
 
 ## 직접 해보기
 
