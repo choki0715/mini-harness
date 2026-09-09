@@ -116,20 +116,30 @@ INSERTIONS: 120          ← LLM 이 그대로 읽는다
 
 ## 설치
 
+**터미널 CLI** (`/plugin` 을 쓸 수 있다):
+
 ```bash
-/plugin marketplace add <이 저장소>
+/plugin marketplace add choki0715/mini-harness
 /plugin install mini-harness@mini-harness-demo
 ```
 
-`/plugin` 이 없는 환경이면:
+**VSCode 확장 등 `/plugin` 이 없는 환경** — 대부분 이쪽이다:
 
 ```bash
-./install.sh          # ~/.claude/ 에 심볼릭 링크
+git clone https://github.com/choki0715/mini-harness
+cd mini-harness && ./install.sh
 ```
 
 `install.sh` 는 커맨드와 스킬만 설치하고 **훅은 설치하지 않는다.**
 그 차이 자체가 수업 재료다 — 커맨드·스킬은 파일을 놓으면 되지만,
-훅은 하네스가 등록해 줘야 도는 것이다.
+훅은 하네스가 '등록'해 줘야 도는 것이다.
+
+훅은 실습 저장소가 자기 `.claude/settings.json` 에 직접 등록한다
+(`examples/make-dirty-repo.sh` 가 해 준다). 그래서 가드레일은 **그 저장소 안에서만** 돈다.
+
+> 이건 편의가 아니라 설계다. 훅을 `~/.claude/settings.json` 에 등록하면
+> 모든 프로젝트에서 돈다 — 수업 자료가 실무 저장소의 커밋까지 막는다.
+> **가드레일에는 범위를 준다.**
 
 ---
 

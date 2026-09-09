@@ -13,6 +13,7 @@
 #   - 테스트 파일은 있지만 새 기능엔 없음   → TEST_FILES_CHANGED 판단 재료
 set -euo pipefail
 
+HARNESS="$(cd "$(dirname "$0")/.." && pwd)"
 DEST="${1:-/tmp/checkup-demo}"
 
 if [ -e "$DEST" ]; then
@@ -34,6 +35,28 @@ def login(user, password):
 PY
 echo "# 데모 프로젝트" > README.md
 echo "def test_login(): pass" > tests/test_login.py
+
+# ─── 훅을 이 저장소에만 건다 ──────────────────────────────────
+# 훅은 원래 전역이다. ~/.claude/settings.json 에 등록하면 모든 프로젝트에서 돈다.
+# 그러면 수업 자료가 실무 저장소의 커밋까지 막는다.
+#
+# 프로젝트 단위 설정(.claude/settings.json)에 등록하면 이 저장소 안에서만 돈다.
+# 실무에서도 같은 판단을 한다 — 가드레일에는 범위를 준다.
+mkdir -p "$DEST/.claude"
+cat > "$DEST/.claude/settings.json" <<JSON
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          { "type": "command", "command": "python3 \"$HARNESS/mini-harness/hooks/guard.py\"", "timeout": 10 }
+        ]
+      }
+    ]
+  }
+}
+JSON
 git add -A
 git commit -qm "로그인 기본 구현"
 
@@ -86,6 +109,15 @@ cat <<EOF
   · auth/ 와 billing/ 은 관계없는 변경 → 커밋을 나누자는 제안
   · 디버그 print 와 TODO 각 1건
   · 새 기능(billing)에 테스트 없음
+
+가드레일(hooks/guard.py)은 이 저장소 안에서만 돈다.
+$DEST/.claude/settings.json 에 등록했다. 다른 프로젝트에는 영향이 없다.
+Claude Code 가 이 디렉터리를 처음 열 때 설정을 신뢰할지 한 번 물을 수 있다.
+
+시연해 볼 것 (전부 차단되어야 한다):
+  git commit -m "테스트"      ← master 는 보호 브랜치
+  git push --force
+  git reset --hard HEAD~1
 
 다시 만들려면:  rm -rf $DEST && $0 $DEST
 EOF

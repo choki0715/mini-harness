@@ -5,7 +5,7 @@ allowed-tools: Bash, Read, Grep, Glob
 ---
 
 변경사항:
-!`"${CLAUDE_PLUGIN_ROOT}/bin/mh-changes" $ARGUMENTS 2>&1`
+!`MH="${CLAUDE_PLUGIN_ROOT:-$(dirname "$(readlink -f "$HOME/.claude/skills/checkup")")/..}/bin/mh-changes"; [ -x "$MH" ] && "$MH" $ARGUMENTS 2>&1 || echo "ERROR: mh-changes 를 찾지 못했다 — 설치를 확인해라 ($MH)"`
 
 기존 커밋 스타일:
 !`ARG="$ARGUMENTS"; git -C "${ARG:-.}" log --oneline -10 2>/dev/null || echo "커밋 없음"`
