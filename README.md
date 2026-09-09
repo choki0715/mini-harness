@@ -116,19 +116,40 @@ INSERTIONS: 120          ← LLM 이 그대로 읽는다
 
 ## 설치
 
-**터미널 CLI** (`/plugin` 을 쓸 수 있다):
+Claude Code 는 클라이언트가 여러 개고, **`/plugin` 은 CLI 에만 있다.**
 
-```bash
+```
+CLI            터미널에서 `claude` 명령으로 띄운 것          → /plugin 있음
+IDE 확장       VSCode·JetBrains 안의 Claude 채팅 패널       → /plugin 없음
+```
+
+헷갈리기 쉬운 곳: **VSCode 의 통합 터미널에서 `claude` 를 치면 그것도 CLI 다.**
+VSCode 를 켰느냐가 아니라, 채팅 패널이냐 터미널의 `claude` 냐가 갈림길이다.
+두 클라이언트는 `~/.claude/` 설정을 공유하므로, 한쪽에서 설치하면 다른 쪽에도 보인다.
+
+**CLI 에서** (`claude` 를 띄운 뒤):
+
+```
 /plugin marketplace add choki0715/mini-harness
 /plugin install mini-harness@mini-harness-demo
 ```
 
-**VSCode 확장 등 `/plugin` 이 없는 환경** — 대부분 이쪽이다:
+**IDE 확장에서** — 또는 설치 과정을 손으로 보여주고 싶을 때:
 
 ```bash
 git clone https://github.com/choki0715/mini-harness
 cd mini-harness && ./install.sh
 ```
+
+둘 중 **하나만** 한다. 양쪽으로 설치하면 커맨드가 중복된다.
+`install.sh` 로 깐 것을 걷어내려면:
+
+```bash
+rm ~/.claude/commands/checkup.md ~/.claude/skills/checkup
+```
+
+설치 후에는 **세션을 다시 시작해야** 커맨드가 뜬다.
+슬래시 커맨드는 세션이 시작할 때 로드된다.
 
 `install.sh` 는 커맨드와 스킬만 설치하고 **훅은 설치하지 않는다.**
 그 차이 자체가 수업 재료다 — 커맨드·스킬은 파일을 놓으면 되지만,
