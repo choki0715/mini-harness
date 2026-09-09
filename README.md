@@ -121,32 +121,33 @@ INSERTIONS: 120          ← LLM 이 그대로 읽는다
 **1. VS Code 설치** — [code.visualstudio.com](https://code.visualstudio.com). 1.94.0 이상.
 
 **2. Claude Code 확장 설치** — `Ctrl+Shift+X` → `Claude Code` 검색 → **Install**.
-안 보이면 `Ctrl+Shift+P` → `Developer: Reload Window`.
 
 **3. 로그인** — 유료 Claude 구독(Pro·Max·Team·Enterprise) 또는 Console 계정. API 키는 필요 없다.
 
-**4. 하네스 설치** — VS Code 통합 터미널(`` Ctrl+` ``)에서:
+**4. 하네스 설치** — VS Code 통합 터미널(`` Ctrl+` ``)에서 두 줄:
 
 ```bash
-git clone https://github.com/choki0715/mini-harness
-cd mini-harness && ./install.sh
-./examples/make-dirty-repo.sh
+claude plugin marketplace add choki0715/mini-harness
+claude plugin install mini-harness@mini-harness-demo
 ```
 
-**5. 창 새로고침** — `Ctrl+Shift+P` → `Developer: Reload Window`.
-슬래시 커맨드는 세션이 시작할 때 로드된다.
+**5. 플러그인 로드** — 채팅창에 `/reload-plugins`.
 
-**6. 실행**
+**6. 실습**
 
 ```
-/checkup /tmp/checkup-demo
+/mini-harness:demo
+/mini-harness:checkup /tmp/checkup-demo
 ```
 
-이 경로는 **플러그인 시스템을 쓰지 않는다.** `install.sh` 가 커맨드와 스킬을
-`~/.claude/` 에 링크하고, 훅은 실습 저장소가 자기 `.claude/settings.json` 에 등록한다.
-그래서 네 조각이 전부 동작한다. 별도 CLI 설치도 필요 없다.
+**`git clone` 은 필요 없다.** 실습 저장소 생성기(`mh-demo-repo`)가 플러그인의
+`bin/` 에 들어 있고, 플러그인의 `bin/` 은 켜져 있는 동안 PATH 에 올라간다.
+`/mini-harness:demo` 가 그것을 부른다.
 
----
+> `claude` 명령은 확장을 깔아도 PATH 에 생기지 않는다. 확장은 채팅 패널용
+> CLI 를 내부에 따로 갖고 있을 뿐이다. 4번을 쓰려면
+> [CLI 를 따로 설치](https://code.claude.com/docs/en/setup)해야 한다.
+> CLI 없이 가려면 아래 `install.sh` 경로를 쓴다.
 
 ### 플러그인으로 설치하려면 — 터미널이 필요하다
 
@@ -204,7 +205,7 @@ claude plugin marketplace remove mini-harness-demo
 둘 다 아니다                                → 아무것도 하지 않는다
 ```
 
-`examples/make-dirty-repo.sh` 가 실습 저장소에 그 마커를 만든다.
+`mh-demo-repo`(플러그인 `bin/`)가 실습 저장소에 그 마커를 만든다.
 그래서 전역으로 설치해도 실무 저장소는 영향이 없다.
 
 > **가드레일에는 범위를 준다.**
@@ -230,7 +231,7 @@ rm ~/.claude/commands/checkup.md ~/.claude/skills/checkup  # install.sh 로 깐 
 
 ```bash
 # 1. 실습 저장소를 만든다 — 학생 전원이 똑같은 상태에서 시작한다
-./examples/make-dirty-repo.sh
+mh-demo-repo
 
 # 2. LLM 없이 스크립트만 먼저 돌려본다
 cd /tmp/checkup-demo && ~/mini-harness/mini-harness/bin/mh-changes
@@ -275,16 +276,18 @@ mini-harness/
 ├── README.md                      ← 지금 읽는 문서
 ├── LICENSE
 ├── install.sh                     ← /plugin 없는 환경용
-├── examples/
-│   └── make-dirty-repo.sh         ← 실습 저장소 생성 (전원 동일 상태)
 ├── test/
 │   └── run-tests.sh               ← 30개. 하네스도 코드다
 ├── .claude-plugin/
 │   └── marketplace.json           ← 이 저장소가 마켓플레이스
 └── mini-harness/                  ← 플러그인 본체
     ├── .claude-plugin/plugin.json
-    ├── commands/checkup.md        ① 진입점
-    ├── bin/mh-changes             ② 사실 수집
+    ├── commands/
+    │   ├── checkup.md             ① 진입점
+    │   └── demo.md                실습 저장소 만들기
+    ├── bin/
+    │   ├── mh-changes             ② 사실 수집
+    │   └── mh-demo-repo           실습 저장소 생성 (PATH 에 올라감)
     ├── skills/checkup/SKILL.md    ③ 절차·판단
     └── hooks/
         ├── hooks.json             ④ 훅 등록

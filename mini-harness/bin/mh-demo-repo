@@ -2,8 +2,11 @@
 # 실습용 저장소를 만든다. 학생 전원이 똑같은 화면을 본다.
 #
 # 사용법:
-#   ./examples/make-dirty-repo.sh            → /tmp/checkup-demo 에 만든다
-#   ./examples/make-dirty-repo.sh ~/demo     → 지정한 경로에 만든다
+#   mh-demo-repo            → /tmp/checkup-demo 에 만든다
+#   mh-demo-repo ~/demo     → 지정한 경로에 만든다
+#
+# 플러그인의 bin/ 은 플러그인이 켜져 있는 동안 PATH 에 올라간다.
+# 그래서 설치만 하면 경로 없이 이름으로 부를 수 있다.
 #
 # 만들어지는 상태 (전부 의도적이다):
 #   - tracked 파일에 하드코딩된 API 키      → SECRET_SUSPECT
@@ -13,12 +16,13 @@
 #   - 테스트 파일은 있지만 새 기능엔 없음   → TEST_FILES_CHANGED 판단 재료
 set -euo pipefail
 
-HARNESS="$(cd "$(dirname "$0")/.." && pwd)"
+# bin/ 의 부모가 플러그인 루트다. 심볼릭 링크로 불릴 수 있으니 realpath 로 푼다.
+HARNESS="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
 DEST="${1:-/tmp/checkup-demo}"
 
 if [ -e "$DEST" ]; then
   echo "이미 있다: $DEST"
-  echo "지우고 다시 만들려면:  rm -rf '$DEST' && $0 '$DEST'"
+  echo "지우고 다시 만들려면:  rm -rf '$DEST' && mh-demo-repo '$DEST'"
   exit 1
 fi
 
@@ -54,7 +58,7 @@ cat > "$DEST/.claude/settings.json" <<JSON
       {
         "matcher": "Bash",
         "hooks": [
-          { "type": "command", "command": "python3 \"$HARNESS/mini-harness/hooks/guard.py\"", "timeout": 10 }
+          { "type": "command", "command": "python3 \"$HARNESS/hooks/guard.py\"", "timeout": 10 }
         ]
       }
     ]
@@ -126,5 +130,5 @@ Claude Code 가 이 디렉터리를 처음 열 때 설정을 신뢰할지 한 �
   git push --force
   git reset --hard HEAD~1
 
-다시 만들려면:  rm -rf $DEST && $0 $DEST
+다시 만들려면:  rm -rf $DEST && mh-demo-repo $DEST
 EOF
