@@ -116,116 +116,79 @@ INSERTIONS: 120          ← LLM 이 그대로 읽는다
 
 ## 설치
 
-Claude Code 는 클라이언트가 두 개다. **플러그인 관리 명령의 이름이 서로 다르다.**
+### 수강생 절차
 
-| 어디서 | 명령 | 형태 |
-|---|---|---|
-| VS Code 확장 (채팅 패널) | `/plugins` | 그래픽 관리 창 |
-| CLI 대화창 (`claude` 실행) | `/plugin` | 텍스트 |
-| 아무 셸 | `claude plugin …` | 셸 명령 |
+**1. VS Code 설치** — [code.visualstudio.com](https://code.visualstudio.com). 1.94.0 이상.
 
-**`/plugin` 과 `/plugins` 는 다른 명령이다.** 확장에서 `/plugin` 을 치면
-"isn't available in this environment" 가 나온다 — 기능이 없는 게 아니라 이름이 다른 것이다.
+**2. Claude Code 확장 설치** — `Ctrl+Shift+X` → `Claude Code` 검색 → **Install**.
+안 보이면 `Ctrl+Shift+P` → `Developer: Reload Window`.
 
-셋은 같은 `~/.claude/` 설정을 쓴다. 어디서 설치하든 다른 쪽에서도 보인다.
+**3. 로그인** — 유료 Claude 구독(Pro·Max·Team·Enterprise) 또는 Console 계정. API 키는 필요 없다.
 
----
-
-### 처음부터 (수강생용)
-
-<details open>
-<summary><b>1. VS Code 설치</b></summary>
-
-[code.visualstudio.com](https://code.visualstudio.com) 에서 받는다. **1.94.0 이상**이어야 한다.
-</details>
-
-<details open>
-<summary><b>2. Claude Code 확장 설치</b></summary>
-
-`Ctrl+Shift+X` (Mac 은 `Cmd+Shift+X`) → **Claude Code** 검색 → **Install**.
-
-설치 후 안 보이면 `Ctrl+Shift+P` → `Developer: Reload Window`.
-</details>
-
-<details open>
-<summary><b>3. 로그인</b></summary>
-
-확장을 처음 열면 로그인을 요구한다. 유료 Claude 구독(Pro·Max·Team·Enterprise)
-또는 Claude Console 계정이면 된다. **API 키는 필요 없다.**
-</details>
-
-<details open>
-<summary><b>4. 마켓플레이스 추가</b></summary>
-
-채팅 입력창에 `/plugins` 입력 → **Marketplaces** 탭 → 아래 주소를 넣는다.
-
-```
-choki0715/mini-harness
-```
-</details>
-
-<details open>
-<summary><b>5. 플러그인 설치</b></summary>
-
-**Plugins** 탭 → `mini-harness` 의 **Install** → 스코프는 **Install for you** 를 고른다.
-
-설치 후 뜨는 배너의 안내대로 **재시작**한다
-(`Ctrl+Shift+P` → `Developer: Reload Window`).
-</details>
-
-<details open>
-<summary><b>6. 실습 저장소를 만들고 실행</b></summary>
-
-이 저장소를 받아서 실습 저장소 생성기를 돌린다.
+**4. 하네스 설치** — VS Code 통합 터미널(`` Ctrl+` ``)에서:
 
 ```bash
 git clone https://github.com/choki0715/mini-harness
-./mini-harness/examples/make-dirty-repo.sh
+cd mini-harness && ./install.sh
+./examples/make-dirty-repo.sh
 ```
 
-그리고 채팅에서:
+**5. 창 새로고침** — `Ctrl+Shift+P` → `Developer: Reload Window`.
+슬래시 커맨드는 세션이 시작할 때 로드된다.
+
+**6. 실행**
 
 ```
-/mini-harness:checkup /tmp/checkup-demo
+/checkup /tmp/checkup-demo
 ```
 
-플러그인 커맨드에는 플러그인 이름이 앞에 붙는다.
-`/` 를 입력하면 목록에 뜨므로 골라도 된다.
-</details>
+이 경로는 **플러그인 시스템을 쓰지 않는다.** `install.sh` 가 커맨드와 스킬을
+`~/.claude/` 에 링크하고, 훅은 실습 저장소가 자기 `.claude/settings.json` 에 등록한다.
+그래서 네 조각이 전부 동작한다. 별도 CLI 설치도 필요 없다.
 
 ---
 
-### 다른 설치 경로
+### 플러그인으로 설치하려면 — 터미널이 필요하다
 
-**CLI 대화창에서** — 터미널에서 `claude` 를 실행한 뒤:
+플러그인 관리 명령은 **대화형 패널을 여는 명령**이라, VS Code 확장의 채팅 패널에서는
+동작하지 않는다. `/plugin` 이나 `/plugins` 를 치면 이렇게 나온다:
 
 ```
-/plugin marketplace add choki0715/mini-harness
-/plugin install mini-harness@mini-harness-demo
+… opens an interactive panel and isn't available in this environment.
+  Run it from the Claude Code terminal instead.
 ```
 
-**아무 셸에서** — 대화창을 안 띄워도 된다:
+**기능이 없는 게 아니라 그 세션이 패널을 못 여는 것이다.** 터미널에서는 된다.
+
+| 어디서 | 무엇을 |
+|---|---|
+| VS Code 통합 터미널 | `claude plugin marketplace add …` — 대화창을 안 띄우는 셸 명령. 제일 간단하다 |
+| 터미널에서 `claude` 실행 후 | `/plugin marketplace add …` — 대화형 TUI |
+| 확장 설정 **Use Terminal** 켜기 | 채팅 패널이 CLI 형태로 바뀌어 `/plugin` 이 동작한다 |
+
+셸에서:
 
 ```bash
 claude plugin marketplace add choki0715/mini-harness
 claude plugin install mini-harness@mini-harness-demo
 ```
 
-`claude` 명령은 확장을 깔아도 PATH 에 안 생긴다. 확장은 채팅 패널용 CLI 를
-내부에 따로 갖고 있을 뿐이다. 셸에서 `claude` 를 쓰려면 [CLI 를 따로 설치](https://code.claude.com/docs/en/setup)한다.
+설치 후 커맨드 이름에 플러그인 이름이 붙는다: `/mini-harness:checkup`.
 
-**플러그인 없이, 파일만 놓기** — 설치 과정을 손으로 보여주고 싶을 때:
+> `claude` 명령은 확장을 깔아도 PATH 에 생기지 않는다. 확장은 채팅 패널용 CLI 를
+> 내부에 따로 갖고 있을 뿐이다. 셸에서 쓰려면
+> [CLI 를 따로 설치](https://code.claude.com/docs/en/setup)한다.
+> **수업에서는 이 의존성을 피하려고 위의 `install.sh` 경로를 기본으로 쓴다.**
+
+### 걷어내기
 
 ```bash
-git clone https://github.com/choki0715/mini-harness
-cd mini-harness && ./install.sh
+rm ~/.claude/commands/checkup.md ~/.claude/skills/checkup   # install.sh 로 깐 경우
+claude plugin uninstall mini-harness@mini-harness-demo      # 플러그인으로 깐 경우
+claude plugin marketplace remove mini-harness-demo
 ```
 
-커맨드와 스킬만 `~/.claude/` 에 링크한다. **훅은 설치되지 않는다.**
-그 차이가 수업 재료다 — 커맨드·스킬은 파일을 놓으면 되지만,
-훅은 하네스가 '등록'해 줘야 도는 것이다.
-
----
+**여러 경로로 동시에 설치하지 않는다.** 커맨드가 중복된다.
 
 ### 훅은 실습 저장소에서만 돈다
 

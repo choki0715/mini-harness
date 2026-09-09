@@ -42,7 +42,9 @@ fi
 echo
 echo "완료. Claude Code 를 다시 시작하면 /checkup 이 뜬다."
 echo
-echo "주의: 훅(hooks/guard.py)은 이 방식으로 설치되지 않는다."
-echo "      훅은 플러그인으로 설치하거나(/plugin), settings.json 에 직접 등록해야 한다."
-echo "      수업에서는 이 차이 자체가 설명거리다 — 커맨드·스킬은 파일을 놓으면 되지만"
-echo "      훅은 하네스가 '등록'해 줘야 도는 것이다."
+echo "이 스크립트는 커맨드와 스킬만 링크한다. 훅은 걸지 않는다."
+echo "훅은 실습 저장소가 자기 .claude/settings.json 에 등록한다:"
+echo "    ./examples/make-dirty-repo.sh"
+echo
+echo "그 차이 자체가 수업 재료다 — 커맨드·스킬은 파일을 놓으면 되지만,"
+echo "훅은 누군가 '등록'해 줘야 도는 것이다. 그래서 범위를 정할 수 있다."
