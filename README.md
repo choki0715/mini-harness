@@ -116,53 +116,120 @@ INSERTIONS: 120          ← LLM 이 그대로 읽는다
 
 ## 설치
 
-`/plugin` 은 **CLI 대화창(TUI) 안에 구현된 슬래시 명령**이다.
-IDE 확장(VSCode·JetBrains의 Claude 채팅 패널)에는 그 명령이 없다.
-**UI 가 없는 것이지 기능이 없는 게 아니다** — 플러그인 자체는 어느 클라이언트에서나 동작한다.
+Claude Code 는 클라이언트가 두 개다. **플러그인 관리 명령의 이름이 서로 다르다.**
 
-설치 경로는 세 가지고, 셋 다 `~/.claude/` 를 쓰므로 클라이언트끼리 공유된다.
+| 어디서 | 명령 | 형태 |
+|---|---|---|
+| VS Code 확장 (채팅 패널) | `/plugins` | 그래픽 관리 창 |
+| CLI 대화창 (`claude` 실행) | `/plugin` | 텍스트 |
+| 아무 셸 | `claude plugin …` | 셸 명령 |
 
-### A. CLI 대화창에서
+**`/plugin` 과 `/plugins` 는 다른 명령이다.** 확장에서 `/plugin` 을 치면
+"isn't available in this environment" 가 나온다 — 기능이 없는 게 아니라 이름이 다른 것이다.
+
+셋은 같은 `~/.claude/` 설정을 쓴다. 어디서 설치하든 다른 쪽에서도 보인다.
+
+---
+
+### 처음부터 (수강생용)
+
+<details open>
+<summary><b>1. VS Code 설치</b></summary>
+
+[code.visualstudio.com](https://code.visualstudio.com) 에서 받는다. **1.94.0 이상**이어야 한다.
+</details>
+
+<details open>
+<summary><b>2. Claude Code 확장 설치</b></summary>
+
+`Ctrl+Shift+X` (Mac 은 `Cmd+Shift+X`) → **Claude Code** 검색 → **Install**.
+
+설치 후 안 보이면 `Ctrl+Shift+P` → `Developer: Reload Window`.
+</details>
+
+<details open>
+<summary><b>3. 로그인</b></summary>
+
+확장을 처음 열면 로그인을 요구한다. 유료 Claude 구독(Pro·Max·Team·Enterprise)
+또는 Claude Console 계정이면 된다. **API 키는 필요 없다.**
+</details>
+
+<details open>
+<summary><b>4. 마켓플레이스 추가</b></summary>
+
+채팅 입력창에 `/plugins` 입력 → **Marketplaces** 탭 → 아래 주소를 넣는다.
+
+```
+choki0715/mini-harness
+```
+</details>
+
+<details open>
+<summary><b>5. 플러그인 설치</b></summary>
+
+**Plugins** 탭 → `mini-harness` 의 **Install** → 스코프는 **Install for you** 를 고른다.
+
+설치 후 뜨는 배너의 안내대로 **재시작**한다
+(`Ctrl+Shift+P` → `Developer: Reload Window`).
+</details>
+
+<details open>
+<summary><b>6. 실습 저장소를 만들고 실행</b></summary>
+
+이 저장소를 받아서 실습 저장소 생성기를 돌린다.
+
+```bash
+git clone https://github.com/choki0715/mini-harness
+./mini-harness/examples/make-dirty-repo.sh
+```
+
+그리고 채팅에서:
+
+```
+/mini-harness:checkup /tmp/checkup-demo
+```
+
+플러그인 커맨드에는 플러그인 이름이 앞에 붙는다.
+`/` 를 입력하면 목록에 뜨므로 골라도 된다.
+</details>
+
+---
+
+### 다른 설치 경로
+
+**CLI 대화창에서** — 터미널에서 `claude` 를 실행한 뒤:
 
 ```
 /plugin marketplace add choki0715/mini-harness
 /plugin install mini-harness@mini-harness-demo
 ```
 
-### B. 아무 터미널에서 (대화창을 안 띄워도 된다)
-
-`/plugin` 과 같은 일을 하는 CLI 서브명령이 따로 있다. **IDE 확장을 쓰더라도 이건 된다.**
+**아무 셸에서** — 대화창을 안 띄워도 된다:
 
 ```bash
 claude plugin marketplace add choki0715/mini-harness
 claude plugin install mini-harness@mini-harness-demo
 ```
 
-### C. skills-dir 플러그인 — 마켓플레이스도 install 도 없이
+`claude` 명령은 확장을 깔아도 PATH 에 안 생긴다. 확장은 채팅 패널용 CLI 를
+내부에 따로 갖고 있을 뿐이다. 셸에서 `claude` 를 쓰려면 [CLI 를 따로 설치](https://code.claude.com/docs/en/setup)한다.
 
-`.claude-plugin/plugin.json` 을 가진 폴더를 `~/.claude/skills/` 아래 두면
-다음 세션에 `이름@skills-dir` 로 자동 로드된다. 훅까지 붙는다.
-
-```bash
-git clone https://github.com/choki0715/mini-harness ~/src/mini-harness
-ln -s ~/src/mini-harness/mini-harness ~/.claude/skills/mini-harness
-```
-
-### D. install.sh — 커맨드·스킬만
+**플러그인 없이, 파일만 놓기** — 설치 과정을 손으로 보여주고 싶을 때:
 
 ```bash
 git clone https://github.com/choki0715/mini-harness
 cd mini-harness && ./install.sh
 ```
 
-**훅은 설치되지 않는다.** 그 차이가 수업 재료다 — 커맨드·스킬은 파일을 놓으면 되지만,
+커맨드와 스킬만 `~/.claude/` 에 링크한다. **훅은 설치되지 않는다.**
+그 차이가 수업 재료다 — 커맨드·스킬은 파일을 놓으면 되지만,
 훅은 하네스가 '등록'해 줘야 도는 것이다.
 
 ---
 
-### 어느 것을 골라도 실무 저장소는 막히지 않는다
+### 훅은 실습 저장소에서만 돈다
 
-A·B·C 는 훅을 **전역**으로 등록한다 — 모든 프로젝트, 모든 세션에서 돈다.
+훅은 설치하면 **모든 프로젝트, 모든 세션**에서 돈다.
 이 예제의 가드레일은 `main`/`master` 커밋을 막으므로, 범위가 없으면
 평소 main 에서 작업하는 저장소의 커밋까지 막힌다. **수업 자료가 실무를 막는다.**
 
@@ -184,16 +251,17 @@ A·B·C 는 훅을 **전역**으로 등록한다 — 모든 프로젝트, 모든
 > 커밋이 막혔다. 범위를 주는 것과 설득되지 않는 것은 다른 이야기다 —
 > **어디를 지킬지는 설계로 정하고, 지키기로 한 곳에서는 타협하지 않는다.**
 
-A·B·C 로 설치했다가 걷어내려면:
+### 걷어내기
 
 ```bash
-claude plugin uninstall mini-harness@mini-harness-demo   # A·B
-rm ~/.claude/skills/mini-harness                          # C
-rm ~/.claude/commands/checkup.md ~/.claude/skills/checkup # D
+claude plugin uninstall mini-harness@mini-harness-demo    # 플러그인
+claude plugin marketplace remove mini-harness-demo        # 마켓플레이스
+rm ~/.claude/commands/checkup.md ~/.claude/skills/checkup  # install.sh 로 깐 경우
 ```
 
-**둘 이상으로 동시에 설치하지 않는다.** 커맨드가 중복된다.
-설치 후에는 **세션을 다시 시작해야** 커맨드가 뜬다 — 세션 시작 때 로드되기 때문이다.
+확장에서는 `/plugins` → 토글로 끄거나 마켓플레이스 탭의 휴지통 아이콘.
+
+**여러 경로로 동시에 설치하지 않는다.** 커맨드가 중복된다.
 
 ## 직접 해보기
 
